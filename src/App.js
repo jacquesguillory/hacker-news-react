@@ -2,6 +2,13 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 
+// const DEFAULT_QUERY = 'redux';
+
+// const PATH_BASE = 'https://hn.algolia.com/api/vi';
+// const PATH_SEARCH = 'search';
+// const PARAM_SEARCH = 'query=';
+
+
 
 const list = [
   {
@@ -35,7 +42,7 @@ const list = [
 const isSearched = searchTerm => item => 
   item.title.toLowerCase().includes(searchTerm.toLowerCase());
 
-
+// ES6 Class Component
 class App extends Component {
 
   constructor(props) {
@@ -82,14 +89,15 @@ class App extends Component {
     const { searchTerm, list} = this.state;
     
     return (
-      <div className="App">
-
-        <Search
-          value={searchTerm}
-          onChange={this.onSearchChange}
-        >
-          Search
-        </Search>
+      <div className="page">
+        <div className="interactions">
+          <Search
+            value={searchTerm}
+            onChange={this.onSearchChange}
+          >
+            Search
+          </Search>
+        </div>
         <Table
           list={list}
           pattern={searchTerm}
@@ -100,11 +108,13 @@ class App extends Component {
   }
 }
 
-class Search extends Component {
-  render(){
-    const { value, onChange, children} = this.props;
+// function stateless component
+// implicit return
+const Search = ({ value, onChange, children}) => 
+
+    //props destructured in function signature instead
+    // const { value, onChange, children} = props;
     
-    return (
       <form>
       {children} <input 
       type="text" 
@@ -112,42 +122,60 @@ class Search extends Component {
       onChange={onChange}
       />
     </form>
-    );
-  }
+
+// functional stateless component
+// explicit return arrow function
+const Table = ({list, pattern, onDismiss}) => {
+
+  // do some code
+
+  const largeColumn = {
+    width: '40%'
+  };
+
+  const midColumn = {
+    width: '30%'
+  };
+
+  const smallColumn = {
+    width: '10%'
+  };
+
+  return ( 
+    <div className="table">
+      {list.filter(isSearched(pattern)).map(item => 
+        <div key={item.objectID} className="table-row">
+          <span style={largeColumn}>
+            <a href={item.url}>{item.title}</a>
+          </span>
+          <span style={midColumn}>{item.author}</span>
+          <span style={smallColumn}>{item.points}</span>
+          <span style={smallColumn}>{item.num_components}</span>
+          <span style={smallColumn}>
+            {/* always put arrow function inside even handler */}
+            <Button 
+            onClick={()=> onDismiss(item.objectID)} 
+            className="button-inline">
+            Dismiss
+            </Button>
+          </span>
+        </div>
+      )}
+    </div>
+  ); 
 }
 
-class Table extends Component {
-  render() {
+// functional stateless component
+// implicit return arrow function
+const Button = ({onClick, className, children}) => 
 
-    const {list, pattern, onDismiss} = this.props;
+    <button 
+      onClick={onClick}
+      className={className}
+      type="button"
+    >
+    {children}
+    </button>
 
-    return (
-
-
-      
-      <div>
-        {list.filter(isSearched(pattern)).map(item => 
-
-          <div key={item.objectID}>
-            <span>
-              <a href={item.url}>{item.title}</a>
-            </span>
-            <span>{item.author}</span>
-            <span>{item.num_components}</span>
-            <span>{item.points}</span>
-            <span>
-              {/* always put arrow function inside even handler */}
-              <button 
-              onClick={()=> onDismiss(item.objectID)} 
-              type="button">
-              Dismiss
-              </button>
-            </span>
-          </div>
-        )}
-      </div>
-    ); 
-  }
-}
 
 export default App;
