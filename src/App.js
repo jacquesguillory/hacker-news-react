@@ -12,7 +12,7 @@ const PARAM_SEARCH = 'query=';
 // var url = PATH_BASE + PATH_SEARCH + '?' + PARAM_SEARCH + DEFAULT_QUERY;
 
 // ES6
-const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${DEFAULT_QUERY}`;
+// const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${DEFAULT_QUERY}`;
 
 
 // Sample list
@@ -45,8 +45,8 @@ const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${DEFAULT_QUERY}`;
 
 //ES6
 //returns all item.titles that include the searchterm
-const isSearched = searchTerm => item => 
-  item.title.toLowerCase().includes(searchTerm.toLowerCase());
+// const isSearched = searchTerm => item => 
+//   item.title.toLowerCase().includes(searchTerm.toLowerCase());
 
 // ES6 Class Component
 class App extends Component {
@@ -60,26 +60,32 @@ class App extends Component {
     }
 
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
+    this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
     this.onDismiss = this.onDismiss.bind(this);
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
   }
 
   setSearchTopStories(result) {
     this.setState({result});
-    console.log(this.state);
+  }
+
+  fetchSearchTopStories(searchTerm) {
+    fetch(`${proxyurl}${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}`)
+    .then(response => response.json())
+    .then(result => this.setSearchTopStories(result))
+    .catch(error => error);
   }
 
   componentDidMount() {
     const {searchTerm} = this.state;
+    this.fetchSearchTopStories(searchTerm);
+  }
 
-    fetch(`${proxyurl}${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}`)
-      .then(response => response.json())
-      .then(result => this.setSearchTopStories(result))
-      .catch(error => error);
-    
-
-    
-  
+  onSearchSubmit(event) {
+    const { searchTerm } = this.state;
+    this.fetchSearchTopStories(searchTerm);
+    event.preventDefault();
   }
 
   onSearchChange(event) {
@@ -96,15 +102,16 @@ class App extends Component {
     //return items that do not match id in the argument
     const isNotId = item => item.objectID !==id;
     //make new list that has all items that do not have the argument id
-    const updatedList = this.state.list.filter(isNotId);
-    //update state of orginal list to new list
-    this.setState({list: updatedList});
-  
+    const updatedHits = this.state.result.hits.filter(isNotId);
+    //update state of orginal hits to new hits using object spread operator '...'
+    this.setState({
+      result: {...this.state.result, hits: updatedHits}
+    });
   }
 
 
   render() {
-    
+    console.log(this.state);
     //destructuring local state object
     // ES5
     // var searchTerm = this.state.searchTerm;
@@ -113,6 +120,7 @@ class App extends Component {
     // ES6 destructuring
     const { searchTerm, result} = this.state;
 
+    // conditional render
     if (!result) { return null; }
     
     return (
@@ -121,15 +129,18 @@ class App extends Component {
           <Search
             value={searchTerm}
             onChange={this.onSearchChange}
+            onSubmit={this.onSearchSubmit}
           >
             Search
           </Search>
         </div>
-        <Table
-          list={result.hits}
-          pattern={searchTerm}
-          onDismiss={this.onDismiss} 
-        />
+        {/* terniary operator. if result is true, render table */}
+        {result &&
+           <Table
+            list={result.hits}
+            onDismiss={this.onDismiss} 
+          />
+        }
       </div>
     );
   }
@@ -137,17 +148,20 @@ class App extends Component {
 
 // function stateless component
 // implicit return
-const Search = ({ value, onChange, children}) => 
+const Search = ({ value, onChange, onSubmit, children}) => 
 
     //props destructured in function signature instead
-    // const { value, onChange, children} = props;
+    // const { value, onChange, onSubmit children} = props;
     
-      <form>
-      {children} <input 
+      <form onSubmit={onSubmit}>
+      <input 
       type="text" 
       value={value} 
       onChange={onChange}
       />
+      <button type="submit">
+        {children}
+      </button>
     </form>
 
 // functional stateless component
@@ -170,7 +184,7 @@ const Table = ({list, pattern, onDismiss}) => {
 
   return ( 
     <div className="table">
-      {list.filter(isSearched(pattern)).map(item => 
+      {list.map(item => 
         <div key={item.objectID} className="table-row">
           <span style={largeColumn}>
             <a href={item.url}>{item.title}</a>
