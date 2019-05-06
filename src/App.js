@@ -1,12 +1,19 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
 
 const DEFAULT_QUERY = 'redux';
+const DEFAULT_HPP = '100';
+
 const proxyurl = 'https://cors-anywhere.herokuapp.com/';
 const PATH_BASE = 'https://hn.algolia.com/api/v1';
+
+//error testing
+// const PATH_BASE = 'https://hn.mydomain.com/api/v1';
+
 const PATH_SEARCH = '/search';
 const PARAM_SEARCH = 'query=';
+const PARAM_PAGE = 'page=';
+const PARAM_HPP = 'hitsPerPage='
 
 // ES5
 // var url = PATH_BASE + PATH_SEARCH + '?' + PARAM_SEARCH + DEFAULT_QUERY;
@@ -55,10 +62,13 @@ class App extends Component {
     super(props);
 
     this.state = {
-      result: null,
-      searchTerm: DEFAULT_QUERY
-    }
+      results: null,
+      searchKey: '',
+      searchTerm: DEFAULT_QUERY,
+      error: null
+    };
 
+    this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
     this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
@@ -66,32 +76,69 @@ class App extends Component {
     this.onSearchSubmit = this.onSearchSubmit.bind(this);
   }
 
-  setSearchTopStories(result) {
-    this.setState({result});
+  //checking if a term was already searched and in the cache so you don't need to make an API call
+  needsToSearchTopStories(searchTerm) {
+    return !this.state.results[searchTerm];
   }
 
-  fetchSearchTopStories(searchTerm) {
-    fetch(`${proxyurl}${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}`)
+  setSearchTopStories(result) {
+    const { hits, page } = result;
+    const { searchKey, results } = this.state;
+
+    const oldHits = results && results[searchKey]
+      ? results[searchKey].hits
+      : [];
+    
+    const updatedHits = [
+      ...oldHits,
+      ...hits
+    ];
+
+    this.setState({
+      results: {
+        ...results,
+        [searchKey]: {hits: updatedHits, page}
+      }
+    })
+
+    console.log(this.state);
+  }
+
+  //calling hackernews api
+  fetchSearchTopStories(searchTerm, page = 0) {
+    fetch(`${proxyurl}${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
     .then(response => response.json())
     .then(result => this.setSearchTopStories(result))
-    .catch(error => error);
+    .catch(error => this.setState({ error }));
   }
 
+  //when component mounts, do api search
   componentDidMount() {
     const {searchTerm} = this.state;
+    this.setState({ searchKey: searchTerm });
     this.fetchSearchTopStories(searchTerm);
   }
 
+  //when submitting a new search, run fetch function
   onSearchSubmit(event) {
     const { searchTerm } = this.state;
-    this.fetchSearchTopStories(searchTerm);
+    this.setState({ searchKey: searchTerm});
+
+    //don't call API if searchterm already exists, use cached data instead
+    if(this.needsToSearchTopStories(searchTerm)){
+      this.fetchSearchTopStories(searchTerm);
+    }
     event.preventDefault();
   }
 
+  //change state search term every time an input is changed in search box
   onSearchChange(event) {
     this.setState({searchTerm: event.target.value});
   }
   onDismiss(id) {
+
+    const { searchKey, results } = this.state;
+    const { hits, page } = results[searchKey];
 
     //ES5
     // function isNotId(item){
@@ -102,27 +149,38 @@ class App extends Component {
     //return items that do not match id in the argument
     const isNotId = item => item.objectID !==id;
     //make new list that has all items that do not have the argument id
-    const updatedHits = this.state.result.hits.filter(isNotId);
+    const updatedHits = hits.filter(isNotId);
     //update state of orginal hits to new hits using object spread operator '...'
     this.setState({
-      result: {...this.state.result, hits: updatedHits}
+      results: {
+        ...results,
+        [searchKey]: { hits: updatedHits, page }
+      }
     });
   }
 
 
   render() {
-    console.log(this.state);
+    // console.log(this.state);
+    // console.log(this.state);
     //destructuring local state object
     // ES5
     // var searchTerm = this.state.searchTerm;
     // var list = this.state.list;
 
     // ES6 destructuring
-    const { searchTerm, result} = this.state;
+    const { searchTerm, results, searchKey, error} = this.state;
+    const page = (
+      results &&
+      results[searchKey] && 
+      results[searchKey].page
+      ) || 0;
+    const list = (
+      results &&
+      results[searchKey] &&
+      results[searchKey].hits
+    ) || [];
 
-    // conditional render
-    if (!result) { return null; }
-    
     return (
       <div className="page">
         <div className="interactions">
@@ -135,12 +193,20 @@ class App extends Component {
           </Search>
         </div>
         {/* terniary operator. if result is true, render table */}
-        {result &&
-           <Table
-            list={result.hits}
-            onDismiss={this.onDismiss} 
-          />
-        }
+        { error
+          ? <div className="interactions">
+            <p>Something went wrong.</p>
+          </div>
+          : <Table
+            list={list}
+            onDismiss={this.onDismiss}
+          /> 
+        }  
+        <div className="interactions">
+          <Button onClick={() => this.fetchSearchTopStories(searchKey, page +1)}>
+            More
+          </Button>
+        </div>
       </div>
     );
   }
