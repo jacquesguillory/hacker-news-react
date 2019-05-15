@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 import './App.css';
 
 const DEFAULT_QUERY = 'redux';
@@ -106,9 +107,8 @@ class App extends Component {
 
   //calling hackernews api
   fetchSearchTopStories(searchTerm, page = 0) {
-    fetch(`${proxyurl}${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
-    .then(response => response.json())
-    .then(result => this.setSearchTopStories(result))
+    axios(`${proxyurl}${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
+    .then(result => this.setSearchTopStories(result.data))
     .catch(error => this.setState({ error }));
   }
 
@@ -189,7 +189,7 @@ class App extends Component {
             onChange={this.onSearchChange}
             onSubmit={this.onSearchSubmit}
           >
-            Search
+            Search 
           </Search>
         </div>
         {/* terniary operator. if result is true, render table */}
@@ -235,7 +235,7 @@ const Search = ({ value, onChange, onSubmit, children}) =>
 const Table = ({list, pattern, onDismiss}) => {
 
   // do some code
-
+  //styling with variables
   const largeColumn = {
     width: '40%'
   };
@@ -286,3 +286,9 @@ const Button = ({onClick, className, children}) =>
 
 
 export default App;
+
+export {
+  Button,
+  Search,
+  Table
+};
