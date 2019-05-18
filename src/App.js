@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import PropTypes from 'prop-types';
 import './App.css';
 
 const DEFAULT_QUERY = 'redux';
@@ -272,6 +273,22 @@ const Table = ({list, pattern, onDismiss}) => {
   ); 
 }
 
+//PropTypes describe the component interface. All the props passed from a parent component 
+//to a child get validated based on the PropTypes interface assigned to the child.
+//isRequired means these props must be defined
+Table.propTypes = {
+  list: PropTypes.arrayOf(
+    PropTypes.shape({
+      objectID: PropTypes.string.isRequired,
+      author: PropTypes.string,
+      url: PropTypes.string,
+      num_comments: PropTypes.number,
+      points: PropTypes.number,
+    })
+  ).isRequired,
+  onDismiss: PropTypes.func.isRequired,
+};
+
 // functional stateless component
 // implicit return arrow function
 const Button = ({onClick, className, children}) => 
@@ -284,6 +301,19 @@ const Button = ({onClick, className, children}) =>
     {children}
     </button>
 
+//default props can be defined in the component
+Button.defaultProps = {
+  className: ''
+};
+
+//PropTypes describe the component interface. All the props passed from a parent component 
+//to a child get validated based on the PropTypes interface assigned to the child.
+//isRequired means these props must be defined
+Button.propTypes = {
+  onclick: PropTypes.func,
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired
+};
 
 export default App;
 
