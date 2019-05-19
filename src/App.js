@@ -67,7 +67,8 @@ class App extends Component {
       results: null,
       searchKey: '',
       searchTerm: DEFAULT_QUERY,
-      error: null
+      error: null,
+      isLoading: false
     };
 
     this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
@@ -83,6 +84,7 @@ class App extends Component {
     return !this.state.results[searchTerm];
   }
 
+  //adds new hits to old hits in the state, caching results
   setSearchTopStories(result) {
     const { hits, page } = result;
     const { searchKey, results } = this.state;
@@ -100,14 +102,19 @@ class App extends Component {
       results: {
         ...results,
         [searchKey]: {hits: updatedHits, page}
-      }
-    })
+      },
+      isLoading: false
+    });
 
     console.log(this.state);
   }
 
   //calling hackernews api
   fetchSearchTopStories(searchTerm, page = 0) {
+
+    //set loading state to true when fetching results
+    this.setState({ isLoading: true });
+
     axios(`${proxyurl}${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
     .then(result => this.setSearchTopStories(result.data))
     .catch(error => this.setState({ error }));
@@ -170,7 +177,7 @@ class App extends Component {
     // var list = this.state.list;
 
     // ES6 destructuring
-    const { searchTerm, results, searchKey, error} = this.state;
+    const { searchTerm, results, searchKey, error, isLoading} = this.state;
     const page = (
       results &&
       results[searchKey] && 
@@ -204,9 +211,12 @@ class App extends Component {
           /> 
         }  
         <div className="interactions">
-          <Button onClick={() => this.fetchSearchTopStories(searchKey, page +1)}>
-            More
-          </Button>
+          { isLoading
+            ? <Loading />
+            : <Button onClick={() => this.fetchSearchTopStories(searchKey, page +1)}>
+                More
+              </Button>
+          }
         </div>
       </div>
     );
@@ -328,6 +338,12 @@ Button.propTypes = {
   className: PropTypes.string,
   children: PropTypes.node.isRequired
 };
+
+// implicit return component
+const Loading = () =>
+  <div>
+    Loading results...
+  </div>
 
 export default App;
 
