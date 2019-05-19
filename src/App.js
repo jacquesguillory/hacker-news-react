@@ -213,23 +213,37 @@ class App extends Component {
   }
 }
 
-// function stateless component
-// implicit return
-const Search = ({ value, onChange, onSubmit, children}) => 
+// ES6 class component
+class Search extends Component {
 
-    //props destructured in function signature instead
-    // const { value, onChange, onSubmit children} = props;
+  //focusing the input field when component mounts using 'this'
+  //to reference DOM element with the 'ref' attribute
+  componentDidMount() {
+    if (this.input) {
+      this.input.focus();
+    }
+  }
+
+  render() {
+    const { value, onChange, onSubmit, children } = this.props;
+
+    return (
     
       <form onSubmit={onSubmit}>
       <input 
       type="text" 
       value={value} 
       onChange={onChange}
+      //referencing DOM with the ref attribute
+      ref={el => this.input = el}
       />
       <button type="submit">
         {children}
       </button>
-    </form>
+      </form>
+    );
+  }
+}
 
 // functional stateless component
 // explicit return arrow function
