@@ -211,12 +211,12 @@ class App extends Component {
           /> 
         }  
         <div className="interactions">
-          { isLoading
-            ? <Loading />
-            : <Button onClick={() => this.fetchSearchTopStories(searchKey, page +1)}>
+          {/* this is the output component of a higher order component that decides whether to render the button component or loading component */}
+          <ButtonWithLoading
+            isLoading={isLoading}
+            onClick={() => this.fetchSearchTopStories(searchKey, page +1)}>
                 More
-              </Button>
-          }
+          </ButtonWithLoading>
         </div>
       </div>
     );
@@ -344,6 +344,20 @@ const Loading = () =>
   <div>
     Loading results...
   </div>
+
+//example of a higher order component, similar to a higher order function
+//conditional render of component depending on if props.isLoading is true
+//conventional prefix of a HOC is 'with'
+//first, destructure isLoading prop from rest of props
+const withLoading = (Component) => ({ isLoading, ...rest }) =>
+  isLoading
+    ? <Loading />
+    : <Component {...rest} />
+
+//Button component is the input component of the HOC
+//enhanced output component is a ButtonWithLoading component
+const ButtonWithLoading = withLoading(Button);
+
 
 export default App;
 
